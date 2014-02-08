@@ -1,7 +1,8 @@
 #!/usr/bin/python
-import math
+import math, re
 import numpy
 import matplotlib.pyplot as plt
+from datetime import datetime
 from scipy.optimize import curve_fit
 from matplotlib.widgets import Button, SpanSelector, RectangleSelector
 import config
@@ -21,6 +22,12 @@ def printHello():
 	print "\t S will open a dialog to save the plot."
 
 def getDataRows(filename):
+	# Get info from filename
+	matchresult = re.search(config.datafileformatregex, filename)
+	testdate = datetime.strptime(matchresult.group(1), config.dateformat)
+	testtype = matchresult.group(2)
+	testduration = int(matchresult.group(3))
+	print 'Loaded file {0} \nRun on {1}\nOf type {2}\nDuration {3} seconds'.format(filename, testdate, testtype, testduration) 
 	# Read file contents into contents
 	dataFile = open(filename)
 	contents = dataFile.read()
@@ -46,7 +53,7 @@ def getDataRows(filename):
 	data = data.applyFunctionToColumn(float, 'Value')
 	data = data.renameColumn('Value','Count')
 	# Return the data
-	return data
+	return (data, testduration)
 
 #def removeZeroCountsAndWarn(data):
 #	f = open(config.errordatafile,'w')
@@ -254,19 +261,21 @@ class MainGuiController(object):
 if __name__ == '__main__': #means it's only gonna work when run from the command line
 	printHello()
 	#execute this if this file gets executed
-	rawData = getDataRows(config.datafile)
-	background = getDataRows(config.backgroundfile)
+	rawData, dataduration = getDataRows(config.datafile)
+	background, bkgduration = getDataRows(config.backgroundfile)
+	#scale background counts to time length of actual test run: scaledbkgcounts = bkgcounts * (dataduration/bkgduration)
+	scaledbkgcounts = numpy.multiply(background['Count'],dataduration/bkgduration)
 	#calculate countErr:
 	#rawData = sqrt(count_raw)
 	#background = sqrt(count_back)
 	#combined = sqrt( raw_err**2 + back_err**2 ) = sqrt(sqrt(count_raw)**2 + sqrt(count_back)**2) = sqrt(abs(count_raw) + abs(count_back))
 	countErr = 	numpy.sqrt(
 					numpy.add(
-						numpy.absolute(rawData['Count']), numpy.absolute(background['Count'])
+						numpy.absolute(rawData['Count']), numpy.absolute(scaledbkgcounts)
 					)
 				)
 	#subtract real background
-	correctedData = rawData.subtractFromColumn('Count', background)
+	correctedData = rawData.subtractFromColumn('Count', scaledbkgcounts)
 	correctedDataWithCountErr = correctedData.withColumn('CountErr',countErr)
 	MainGuiController().run(correctedDataWithCountErr, start=0, end=4096)
 

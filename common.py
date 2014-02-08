@@ -220,8 +220,10 @@ class TestData:
 					seqs.append(other.getColumn(fieldName))
 				else:
 					raise TestDataException('ERROR: Column {0} missing from one of the argument TestData'.format(fieldName))
-			elif (isinstance(other, list) or isinstance(other, tuple)):
+			elif (isinstance(other, list) or isinstance(other, tuple) or isinstance(other,numpy.ndarray)):
 				seqs.append(other)
+			else:
+				print 'WARNING: Expecting some type of list or tuple, got: {1} of type {0}'.format(type(other), other)
 		allSameLength = reduce(lambda x,y: x and len(y)==seqLength, seqs, True)
 		if allSameLength:
 			c_ = [func(*x) for x in zip(*seqs)]
