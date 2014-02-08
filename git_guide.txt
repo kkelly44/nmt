@@ -10,7 +10,7 @@
 		git config --global user.name "JohnDoe"
 		git config --global user.email "john.doe@gmail.com"
 		
-2. Common commands (gui tools also exist):
+2. Common commands, have to be executed from within folder nmt (created with clone command):
 	2.1: Get latest updates from server:
 		git pull origin
 	2.2: Add changes to (or new) files/directories:					
