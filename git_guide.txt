@@ -20,3 +20,9 @@
 		git commit
 	2.5: Push your local master copy to the server: 
 		git push origin master (will ask for your github user and password)
+
+3. Help and documentation:
+	git gui tools: http://git-scm.com/downloads/guis
+	git documentation: http://git-scm.com/doc
+	git reference: http://gitref.org/
+	github help: https://help.github.com/
