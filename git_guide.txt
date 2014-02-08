@@ -10,11 +10,13 @@
 		git config --global user.email "john.doe@gmail.com"
 		
 2. Common commands (gui tools also exist):
-	2.1: Add changes to (or new) files/directories:					
+	2.1: Get latest updates from server:
+		git pull origin
+	2.2: Add changes to (or new) files/directories:					
 		git add filename1 filename2 (can also be directories and can contain wilcards e.g. *.py)
-	2.2: Get current status of changes: 			
+	2.3: Get current status of changes: 			
 		git status
-	2.3: Commit current changes to local master: 	
+	2.4: Commit current changes to local master: 	
 		git commit
-	2.4: Push your local master copy to the server: 
+	2.5: Push your local master copy to the server: 
 		git push origin master (will ask for your github user and password)
