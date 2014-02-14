@@ -85,6 +85,13 @@ def fittedFunction(func, *parameters):
 	def resultFunc(x):
 		return func(x, *parameters)
 	return resultFunc
+	
+def getDefaultsForGaussianFit(x,y): # because 111 is not going to be a decent starting point, we feed it common sense starting values
+	# a should be max of y, b should be x value corresponding to max y, c should be 1/6th of number of elements in interval
+	a = max(y)
+	b = x[y.index(a)]
+	c = len(x)/6
+	return (a,b,c)	
 
 # Just to avoid defining functions twice	
 # gaussianOdr = toOdrFunction(gaussian)

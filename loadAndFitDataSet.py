@@ -8,7 +8,7 @@ from matplotlib.widgets import Button, SpanSelector, RectangleSelector
 import config
 from startingvaluesdialog import showStartingValuesDialog
 from correlateenergydialog import showCorrelateEnergyDialog
-from common import TestData, FitData, gaussian, line, isNotEmptyString, fitFunctionLeastSq, addFunctionToPlot, createEmptyPlottingArea, addDataWithErrorBarsToPlot, fittedFunction, debug, lineOdr, gaussianOdr, fitFunctionOdr, getDataRowWithMaxForField, fittedOdrFunction
+from common import TestData, FitData, gaussian, line, isNotEmptyString, fitFunctionLeastSq, addFunctionToPlot, createEmptyPlottingArea, addDataWithErrorBarsToPlot, fittedFunction, debug, lineOdr, gaussianOdr, fitFunctionOdr, getDataRowWithMaxForField, fittedOdrFunction, getDefaultsForGaussianFit
 
 def printHello():
 	print "Hello, I'm working!"
@@ -54,13 +54,13 @@ def getDataRows(filename):
 	# Return the data
 	return (data, testduration)
 
-def getDefaultsForGaussianFit(interval): # beacuse 111 is not going to be a decent starting point, we feed it common sense starting values
-	# a should be max of count in interval, b should be channel of max count, c should be half of elements in interval
-	maxCount = getDataRowWithMaxForField('Count', interval)
-	a = maxCount['Count']
-	b = maxCount['Channel']
-	c = len(interval)/6
-	return (a,b,c)
+#def getDefaultsForGaussianFit(interval): # beacuse 111 is not going to be a decent starting point, we feed it common sense starting values
+#	# a should be max of count in interval, b should be channel of max count, c should be half of elements in interval
+#	maxCount = getDataRowWithMaxForField('Count', interval)
+#	a = maxCount['Count']
+#	b = maxCount['Channel']
+#	c = len(interval)/6
+#	return (a,b,c)
 
 def plotRangeTo(dataWithCountErr, start, end): 
 	(fig, axes) = createEmptyPlottingArea('Channel', 'Count', x_majorticks = 300, x_minorticks = 100, x_length=end-start)
@@ -154,7 +154,7 @@ def processAndPlotEnergyCalibrationData(energyCalibrationData):
 	
 	(a,b) = params #fits for line
 	fittedLine = fittedOdrFunction(lineOdr, params)
-	addFunctionToPlot(axes, x, fittedLine, config.fittedformat)
+	addFunctionToPlot(axes, x, fittedLine, config.energybarplotformat)
 	fig.show()
 	return energyCalibrationFit
 
@@ -197,7 +197,7 @@ class MainGuiController(object):
 			print 'Range %3.2f --> %3.2f selected for gaussian fit' % (self.currentStartEnd[0], self.currentStartEnd[1])
 			self.currentInterval = self.dataWithCountErr.extractRows(self.currentStartEnd[0],self.currentStartEnd[1], byFieldName='Channel')
 			#print 'currentInterval set to \n {0}'.format(self.currentInterval)
-			(a,b,c) = getDefaultsForGaussianFit(self.currentInterval)
+			(a,b,c) = getDefaultsForGaussianFit(x = self.currentInterval['Channel'], y = self.currentInterval['Count'])
 			showStartingValuesDialog({'a':a, 'b':b, 'c':c, 'iterations': 1000},self.calculateGaussian)
 	def calculateGaussian(self, parameters):
 		start_a = float(parameters['a'])
