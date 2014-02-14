@@ -16,7 +16,7 @@ from correlateenergydialog import showCorrelateEnergyDialog
 from common import isNotEmptyString, debug
 from fitting import fittedOdrFunction, getDefaultsForGaussianFit, lineOdr, gaussianOdr, fitFunctionOdr, fittedFunction, fitFunctionLeastSq, gaussian, line, removeDC
 from data import TestData, FitData
-from file import loadTestFile
+from file import loadTestFileWithBackgroundAndCalculateCountErr
 from plotting import addFunctionToPlot, createEmptyPlottingArea, addDataWithErrorBarsToPlot
 
 def printHello():
@@ -232,35 +232,6 @@ if __name__ == '__main__': #means it's only gonna work when run from the command
 	printHello()
 	datafilename = config.datafile
 	bkgfilename = config.backgroundfile
-	#execute this if this file gets executed
-	rawData, dataduration = loadTestFile(datafilename, config.datafileformatregex, config.dateformat)
-	background, bkgduration = loadTestFile(bkgfilename, config.datafileformatregex, config.dateformat)
-	#scale background counts to time length of actual test run: scaledbkgcounts = bkgcounts * (dataduration/bkgduration)
-	scaledbkgcounts = numpy.multiply(background['Count'],dataduration/bkgduration)
-	#calculate countErr:
-	#rawData = sqrt(count_raw)
-	#background = sqrt(count_back)
-	#combined = sqrt( raw_err**2 + back_err**2 ) = sqrt(sqrt(count_raw)**2 + sqrt(count_back)**2) = sqrt(abs(count_raw) + abs(count_back))
-	countErr = 	numpy.sqrt(
-					numpy.add(
-						numpy.absolute(rawData['Count']), numpy.absolute(scaledbkgcounts)
-					)
-				)
-	#subtract real background
-	correctedData = rawData.subtractFromColumn('Count', scaledbkgcounts)
-	correctedDataWithCountErr = correctedData.withColumn('CountErr',countErr)
+	data = loadTestFileWithBackgroundAndCalculateCountErr(datafilename, bkgfilename, config.datafileformatregex, config.dateformat)
 	basefilename = os.path.basename(datafilename)[0:-4] #basename gets just the filename, [0:-4] gets the part without the extension
-	MainGuiController().run(correctedDataWithCountErr, basefilename, start=0, end=4096)
-
-
-
-
-
-
-
-
-
-
-
-
-
+	MainGuiController().run(data, basefilename, start=config.datastart, end=config.dataend)

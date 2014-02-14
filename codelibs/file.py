@@ -1,5 +1,5 @@
 from data import TestData
-import re
+import re, numpy
 from datetime import datetime
 from common import isNotEmptyString
 def loadTestFile(filename, fileformat, dateformat):
@@ -35,3 +35,22 @@ def loadTestFile(filename, fileformat, dateformat):
 	data = data.renameColumn('Value','Count')
 	# Return the data
 	return (data, testduration)
+	
+def loadTestFileWithBackgroundAndCalculateCountErr(datafilename, bkgfilename, fileformat, dateformat):
+	rawData, dataduration = loadTestFile(datafilename, fileformat, dateformat)
+	background, bkgduration = loadTestFile(bkgfilename, fileformat, dateformat)
+	#scale background counts to time length of actual test run: scaledbkgcounts = bkgcounts * (dataduration/bkgduration)
+	scaledbkgcounts = numpy.multiply(background['Count'],dataduration/bkgduration)
+	#calculate countErr:
+	#rawData = sqrt(count_raw)
+	#background = sqrt(count_back)
+	#combined = sqrt( raw_err**2 + back_err**2 ) = sqrt(sqrt(count_raw)**2 + sqrt(count_back)**2) = sqrt(abs(count_raw) + abs(count_back))
+	countErr = 	numpy.sqrt(
+					numpy.add(
+						numpy.absolute(rawData['Count']), numpy.absolute(scaledbkgcounts)
+					)
+				)
+	#subtract real background
+	correctedData = rawData.subtractFromColumn('Count', scaledbkgcounts)
+	correctedDataWithCountErr = correctedData.withColumn('CountErr',countErr)
+	return correctedDataWithCountErr

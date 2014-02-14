@@ -5,17 +5,17 @@ import numpy
 # Plotting #
 ############
 
-def addFunctionToPlot(axes, xs, func, fmt):
+def addFunctionToPlot(axes, xs, func, fmt, label=None):
 	ys = [func(x) for x in xs]
-	axes.errorbar(xs, ys, fmt=fmt)
+	axes.errorbar(xs, ys, fmt=fmt, label=label)
 
-def addDataWithErrorBarsToPlot(axes, x, y, x_err=None, y_err=None, fmt='-'):
+def addDataWithErrorBarsToPlot(axes, x, y, x_err=None, y_err=None, fmt='-', label=None):
 	'''Add plot with error bars to the given plot axes
 		the error bar function:
 		http://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes.errorbar
 		description of formats (line, dotted line, dots, ...):
 		http://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes.plot'''
-	(plotline, caplines, barlinecols) = axes.errorbar(x, y, fmt = fmt, xerr=x_err, yerr = y_err)
+	(plotline, caplines, barlinecols) = axes.errorbar(x, y, fmt = fmt, xerr=x_err, yerr = y_err, label=label)
 	return (plotline, caplines, barlinecols) #Values on which matplotlib bases its plotting (should you need to fiddle with them)
 
 def createEmptyPlottingArea(xAxisLabel, yAxisLabel, figWidth=16, figHeight=10, x_majorticks = -1, x_minorticks = -1, x_length=1000, y_majorticks = -1, y_minorticks = -1, y_length=10000, fontsize=14): 
