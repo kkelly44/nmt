@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import math, re, os, numpy, config, sys
+import math, re, os, numpy, sys
+import loadAndFitDataSetconfig as config
 import matplotlib.pyplot as plt
 from datetime import datetime
 from scipy.optimize import curve_fit
@@ -37,7 +38,7 @@ def printHello():
 #	return (a,b,c)
 
 def plotRangeTo(dataWithCountErr, start, end): 
-	(fig, axes) = createEmptyPlottingArea('Channel', 'Count', x_majorticks = 300, x_minorticks = 100, x_length=end-start, fontsize = config.fontsize, figWidth=config.plotwidth, figHeight=config.plotheight)
+	(fig, axes) = createEmptyPlottingArea(config.test_x_axis_label, config.test_y_axis_label, x_majorticks=config.test_x_majorticks, x_minorticks=config.test_x_minorticks, x_length=end-start, fontsize = config.fontsize, figWidth=config.plotwidth, figHeight=config.plotheight)
 
 	channel = dataWithCountErr['Channel'][start:end]
 	count = dataWithCountErr['Count'][start:end]
@@ -99,7 +100,7 @@ def processAndPlotEnergyCalibrationData(energyCalibrationData):
 	x_err = energyCalibrationData['PeakErr']
 	y = energyCalibrationData['Energy']
 	y_err = energyCalibrationData['EnergyErr']
-	(fig, axes) = createEmptyPlottingArea('Channel', 'Energy', fontsize = config.fontsize, figWidth=config.plotwidth, figHeight=config.plotheight)
+	(fig, axes) = createEmptyPlottingArea(config.energy_x_axis_label, config.energy_y_axis_label, fontsize = config.fontsize, figWidth=config.plotwidth, figHeight=config.plotheight)
 	addDataWithErrorBarsToPlot(axes, x, y, x_err=x_err, y_err=y_err, fmt=config.energyplotformat)
 	fig.show()
 	
