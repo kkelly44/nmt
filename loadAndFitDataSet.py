@@ -1,14 +1,22 @@
 #!/usr/bin/python
-import math, re, os
-import numpy
+import math, re, os, numpy, config, sys
 import matplotlib.pyplot as plt
 from datetime import datetime
 from scipy.optimize import curve_fit
 from matplotlib.widgets import Button, SpanSelector, RectangleSelector
-import config
+if __name__ == '__main__':
+	#Make sure it doesn't matter where things are executed from
+	PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
+	os.chdir(PROJECT_DIR)
+	sys.path.append(PROJECT_DIR)
+	sys.path.append(os.path.join(PROJECT_DIR,'codelibs')) #add files in codelibs
 from startingvaluesdialog import showStartingValuesDialog
 from correlateenergydialog import showCorrelateEnergyDialog
-from common import TestData, FitData, gaussian, line, isNotEmptyString, fitFunctionLeastSq, addFunctionToPlot, createEmptyPlottingArea, addDataWithErrorBarsToPlot, fittedFunction, debug, lineOdr, gaussianOdr, fitFunctionOdr, getDataRowWithMaxForField, fittedOdrFunction, getDefaultsForGaussianFit
+from common import isNotEmptyString, debug
+from fitting import fittedOdrFunction, getDefaultsForGaussianFit, lineOdr, gaussianOdr, fitFunctionOdr, fittedFunction, fitFunctionLeastSq, gaussian, line, removeDC
+from data import TestData, FitData
+from file import loadTestFile
+from plotting import addFunctionToPlot, createEmptyPlottingArea, addDataWithErrorBarsToPlot
 
 def printHello():
 	print "Hello, I'm working!"
@@ -20,40 +28,6 @@ def printHello():
 	print "\t E to start the Energy calibration (saves energy calibration and gaussian fits to file)."
 	print "\t S will open a dialog to save the plot."
 
-def getDataRows(filename):
-	# Get info from filename
-	matchresult = re.search(config.datafileformatregex, filename)
-	testdate = datetime.strptime(matchresult.group(1), config.dateformat)
-	testtype = matchresult.group(2)
-	testduration = int(matchresult.group(3))
-	print 'Loaded file {0} \nRun on {1}\nOf type {2}\nDuration {3} seconds'.format(filename, testdate, testtype, testduration) 
-	# Read file contents into contents
-	dataFile = open(filename)
-	contents = dataFile.read()
-	dataFile.close()
-	
-	# Split lines into rows of data
-	(head, tail) = contents.split('\r',1) #first line has a \r instead of a \n, so we split on the first \r, then treat it normally
-	rows = [head] + tail.split('\n')
-	# Filter out empty rows (should only be the very last one, but we look for other ones anyway)
-	filteredRows = filter(isNotEmptyString, rows)
-	# instead of using the function isNotEmptyString, we could have also used an inline function: filter(lambda x: x != '', rows)
-	# Split comma seperated values
-	splitRows = [row.split(';') for row in filteredRows]
-	# Split header and data
-	header = splitRows[0] #we probably don't need this
-	dataAsStrings = splitRows[1:]
-	# Make sure data is interpreted as the correct types
-	#dataAsFloats = [[float(el) for el in row] for row in dataAsStrings]
-	# Remove unecessary data
-	data = TestData(header,*dataAsStrings)
-	data = data.withoutColumn('Calibration')
-	data = data.applyFunctionToColumn(float, 'Channel')
-	data = data.applyFunctionToColumn(float, 'Value')
-	data = data.renameColumn('Value','Count')
-	# Return the data
-	return (data, testduration)
-
 #def getDefaultsForGaussianFit(interval): # beacuse 111 is not going to be a decent starting point, we feed it common sense starting values
 #	# a should be max of count in interval, b should be channel of max count, c should be half of elements in interval
 #	maxCount = getDataRowWithMaxForField('Count', interval)
@@ -63,28 +37,14 @@ def getDataRows(filename):
 #	return (a,b,c)
 
 def plotRangeTo(dataWithCountErr, start, end): 
-	(fig, axes) = createEmptyPlottingArea('Channel', 'Count', x_majorticks = 300, x_minorticks = 100, x_length=end-start)
+	(fig, axes) = createEmptyPlottingArea('Channel', 'Count', x_majorticks = 300, x_minorticks = 100, x_length=end-start, fontsize = config.fontsize, figWidth=config.plotwidth, figHeight=config.plotheight)
 
 	channel = dataWithCountErr['Channel'][start:end]
 	count = dataWithCountErr['Count'][start:end]
 	countErr = dataWithCountErr['CountErr'][start:end]
 
-	addDataWithErrorBarsToPlot(axes, channel, count, y_err=countErr)
+	addDataWithErrorBarsToPlot(axes, channel, count, y_err=countErr, fmt=config.testdataplotformat)
 	return (fig,axes)
-
-# WARNING: does not take x_err or y_err into account (just returns them unchanged).
-def removeDC(x,y,x_err,y_err):
-	firstX = x[0]
-	lastX = x[-1]	
-	firstY = y[0]
-	lastY = y[-1]
-	dcA = (lastY-firstY)/(lastX-firstX)
-	dcB = firstY - dcA*firstX
-	fittedLine = fittedFunction(line, dcA, dcB)
-	dcY = [fittedLine(xi) for xi in x]
-	#substract dcY from y -> ATTENTION: should we change y_err or does it stay the same?
-	y = numpy.subtract(y,dcY)
-	return (x,y,x_err,y_err)
 
 	
 #def fitGaussianAndAddToPlotLeastSq(interval, startingGaussianParameters, max_iterations, fig, axes):
@@ -139,8 +99,8 @@ def processAndPlotEnergyCalibrationData(energyCalibrationData):
 	x_err = energyCalibrationData['PeakErr']
 	y = energyCalibrationData['Energy']
 	y_err = energyCalibrationData['EnergyErr']
-	(fig, axes) = createEmptyPlottingArea('Channel', 'Energy')
-	addDataWithErrorBarsToPlot(axes, x, y, x_err=x_err, y_err=y_err)
+	(fig, axes) = createEmptyPlottingArea('Channel', 'Energy', fontsize = config.fontsize, figWidth=config.plotwidth, figHeight=config.plotheight)
+	addDataWithErrorBarsToPlot(axes, x, y, x_err=x_err, y_err=y_err, fmt=config.energyplotformat)
 	fig.show()
 	
 	#find fit for energy calibration
@@ -154,7 +114,7 @@ def processAndPlotEnergyCalibrationData(energyCalibrationData):
 	
 	(a,b) = params #fits for line
 	fittedLine = fittedOdrFunction(lineOdr, params)
-	addFunctionToPlot(axes, x, fittedLine, config.energybarplotformat)
+	addFunctionToPlot(axes, x, fittedLine, config.energyfitplotformat)
 	fig.show()
 	return energyCalibrationFit
 
@@ -228,7 +188,7 @@ class MainGuiController(object):
 		f = open(self.basefilename + config.gaussianFitDataSuffix + '.txt', 'w')
 		for fit in self.gaussianFits:
 			(fitdata, countsum) = fit
-			f.write(fitdata.text())
+			f.write(fitdata.text(config.tabWidth))
 			f.write('\n\n')
 			f.write('Area under selected interval: {0}'.format(countsum))
 			f.write('\n\n\n')
@@ -238,7 +198,7 @@ class MainGuiController(object):
 	def saveEnergyCalibration(self):
 		fit = self.currentEnergyCalibrationFit
 		f = open(self.basefilename + config.energyFitDataSuffix + '.txt', 'w')
-		f.write(fit.text())
+		f.write(fit.text(config.tabWidth))
 		f.close()
 		f = open(self.basefilename + config.energyFitCsvSuffix + '.csv', 'w')
 		f.write(fit.params.text(fieldSeparator=';'))
@@ -267,12 +227,13 @@ class MainGuiController(object):
 
 
 if __name__ == '__main__': #means it's only gonna work when run from the command line
+	#Start script
 	printHello()
 	datafilename = config.datafile
 	bkgfilename = config.backgroundfile
 	#execute this if this file gets executed
-	rawData, dataduration = getDataRows(datafilename)
-	background, bkgduration = getDataRows(bkgfilename)
+	rawData, dataduration = loadTestFile(datafilename, config.datafileformatregex, config.dateformat)
+	background, bkgduration = loadTestFile(bkgfilename, config.datafileformatregex, config.dateformat)
 	#scale background counts to time length of actual test run: scaledbkgcounts = bkgcounts * (dataduration/bkgduration)
 	scaledbkgcounts = numpy.multiply(background['Count'],dataduration/bkgduration)
 	#calculate countErr:

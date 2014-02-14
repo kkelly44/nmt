@@ -1,11 +1,11 @@
 # Plot configuration
 plotwidth = 16
 plotheight = 10
-errorbarplotformat = 'go' #green dots, see http://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes.plot for plot formats
-energybarplotformat = 'ro-'
+testdataplotformat = 'go' #green dots, see http://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes.plot for plot formats
+energyplotformat = 'go'
+energyfitplotformat = 'ro-'
 fontsize = 16
 fittedformat = 'ro'
-standardplotformat = 'r-'
 
 # Data set configuration
 datastart = 0
