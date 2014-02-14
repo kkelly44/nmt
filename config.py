@@ -3,7 +3,7 @@ plotwidth = 16
 plotheight = 10
 errorbarplotformat = 'go' #green dots, see http://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes.plot for plot formats
 fontsize = 16
-gaussianformat = 'r-'
+fittedformat = 'ro'
 standardplotformat = 'r-'
 
 # Data set configuration
@@ -20,6 +20,12 @@ datafileformatregex = r'(\d{4}\.\d{2}\.\d{2}\-\d{2}:\d{2})_(data|bkg)_.*_(\d{2}\
 dateformat = '%Y.%m.%d-%H:%M' #see http://docs.python.org/2/library/time.html#time.strftime
 energycalibrationparamsavefile = 'energy_calibration.txt'
 energycalibrationdatasavefile = 'energy_calibration.csv'
+
+# Output files configuration
+gaussianFitDataSuffix = 'gaussianFits'
+energyFitDataSuffix = 'energyFits'
+energyFitCsvSuffix = 'energyFits'
+tabWidth = 4 #number of spaces a tab is expected to be, used for lining up values
 
 # Debugging
 debugfile = 'debug.txt' #to print things to large or unwieldy for commandline purposes (function is in common called debug)

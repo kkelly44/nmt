@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import math, re
+import math, re, os
 import numpy
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -8,17 +8,16 @@ from matplotlib.widgets import Button, SpanSelector, RectangleSelector
 import config
 from startingvaluesdialog import showStartingValuesDialog
 from correlateenergydialog import showCorrelateEnergyDialog
-from common import TestData, gaussian, line, isNotEmptyString, fitFunction, addFunctionToPlot, createEmptyPlottingArea, addDataWithErrorBarsToPlot, fittedFunction, debug, lineOdr, gaussianOdr, fitFunctionWithDoubleErr, getDataRowWithMaxForField
+from common import TestData, FitData, gaussian, line, isNotEmptyString, fitFunctionLeastSq, addFunctionToPlot, createEmptyPlottingArea, addDataWithErrorBarsToPlot, fittedFunction, debug, lineOdr, gaussianOdr, fitFunctionOdr, getDataRowWithMaxForField, fittedOdrFunction
 
 def printHello():
 	print "Hello, I'm working!"
 	print "Remember: its:"
-	print "\t C to start the selector. Drag and drop over the area. The selection will show up in commandline. You can keep selecting until the desired invertal is selected. Click C again to stop the selector (in case you ever need it)."
+	print "\t C to start the selector. Drag and drop over the area. The selection will show up in commandline. You can keep selecting until the desired invertal is selected. Click C again to stop the selector (useful when zooming in)."
 	print "\t G to run the Gaussian fit for the current selection. Press G again without making a new selection to run again (you can change starting values and iterations)"
 	print "\t \t Select the next peak and press G. You only need to click C once to start the selector."
 	print "\t A to Add the gaussian fit calculations."
-	print "\t E to start the Energy calibration."
-	print "\t F to save the energy calibration to File"
+	print "\t E to start the Energy calibration (saves energy calibration and gaussian fits to file)."
 	print "\t S will open a dialog to save the plot."
 
 def getDataRows(filename):
@@ -55,22 +54,6 @@ def getDataRows(filename):
 	# Return the data
 	return (data, testduration)
 
-#def removeZeroCountsAndWarn(data):
-#	f = open(config.errordatafile,'w')
-#	def filterFunc(row):
-#		if row['Count'] != 0:
-#			return True
-#		else:
-#			f.write('{Channel};{Count}'.format(**row))
-#			return False
-#	result = [row for row in data if filterFunc(row)]
-#	f.close()
-#	return result
-
-def addCountErr(data): # adds the Y error to the data array
-	counts = data['Count']
-	return data.withColumn('CountErr',numpy.sqrt(counts))
-
 def getDefaultsForGaussianFit(interval): # beacuse 111 is not going to be a decent starting point, we feed it common sense starting values
 	# a should be max of count in interval, b should be channel of max count, c should be half of elements in interval
 	maxCount = getDataRowWithMaxForField('Count', interval)
@@ -80,7 +63,7 @@ def getDefaultsForGaussianFit(interval): # beacuse 111 is not going to be a dece
 	return (a,b,c)
 
 def plotRangeTo(dataWithCountErr, start, end): 
-	(fig, axes) = createEmptyPlottingArea('Channel', 'Count', x_majorticks = 300, x_minorticks = 100, x_length=4096)
+	(fig, axes) = createEmptyPlottingArea('Channel', 'Count', x_majorticks = 300, x_minorticks = 100, x_length=end-start)
 
 	channel = dataWithCountErr['Channel'][start:end]
 	count = dataWithCountErr['Count'][start:end]
@@ -104,29 +87,52 @@ def removeDC(x,y,x_err,y_err):
 	return (x,y,x_err,y_err)
 
 	
-def fitGaussianAndAddToPlot(interval, startingGaussianParameters, max_iterations, fig, axes):
+#def fitGaussianAndAddToPlotLeastSq(interval, startingGaussianParameters, max_iterations, fig, axes):
+#	x = interval['Channel']
+#	y = interval['Count']
+#	x_err = None #Just making it explicit that we don't have an x_err at this point
+#	y_err = interval['CountErr']
+#	
+#	(x,y,x_err,y_err) = removeDC(x,y,x_err,y_err)
+#	countSum = numpy.sum(y)
+#	
+#	(popt, pcov, fit_errors, infodict, errmsg, success) = fitFunctionLeastSq(gaussian, x, y, startingGaussianParameters, y_err=y_err, max_iterations=max_iterations)
+#	if success:
+#		(a,b,c) = popt
+#		(err_a, err_b, err_c) = fit_errors
+#		gaussParams = ({'a':a, 'b':b, 'c':c},pcov,{'a':err_a, 'b':err_b, 'c':err_c},countSum)
+#		(params, variance_matrix, fit_errors) = gaussParams
+#		print 'params: {0}'.format(params)
+#		print 'fit_errors: {0}'.format(fit_errors)
+#		fittedGaussian = fittedFunction(gaussian,a,b,c)
+#		addFunctionToPlot(axes, interval['Channel'], fittedGaussian, fmt=config.fittedformat)
+#		fig.show()
+#		return gaussParams
+#	else:
+#		print 'Error creating gaussian fit: {0}'.format(errmsg)
+#		return None
+
+def fitGaussianAndAddToPlotOdr(interval, startingGaussianParameters, max_iterations, fig, axes):
 	x = interval['Channel']
 	y = interval['Count']
 	x_err = None #Just making it explicit that we don't have an x_err at this point
 	y_err = interval['CountErr']
 	
 	(x,y,x_err,y_err) = removeDC(x,y,x_err,y_err)
+	countSum = numpy.sum(y)
 	
-	(popt, pcov, fit_errors, infodict, errmsg, success) = fitFunction(gaussian, x, y, startingGaussianParameters, y_err=y_err, max_iterations=max_iterations)
-	if success:
-		(a,b,c) = popt
-		(err_a, err_b, err_c) = fit_errors
-		gaussParams = ({'a':a, 'b':b, 'c':c},pcov,{'a':err_a, 'b':err_b, 'c':err_c})
-		(params, variance_matrix, fit_errors) = gaussParams
-		print 'params: {0}'.format(params)
-		print 'fit_errors: {0}'.format(fit_errors)
-		fittedGaussian = fittedFunction(gaussian,a,b,c)
-		addFunctionToPlot(axes, interval['Channel'], fittedGaussian)
-		fig.show()
-		return gaussParams
-	else:
-		print 'Error creating gaussian fit: {0}'.format(errmsg)
-		return None
+	output = fitFunctionOdr(x, y, x_err, y_err, fitFunction=gaussianOdr, startingParameters=startingGaussianParameters)
+	params = output.beta
+	param_std_dev = output.sd_beta #seems to calculated this for us already	
+	print 'Params: ', params, '\nParam Std Dev: ', param_std_dev
+#	(a,b,c) = params
+#	(err_a, err_b, err_c) = fit_errors
+	gaussParams = FitData(TestData(['Param','Value','Std Dev'], ['a','b','c'], params, param_std_dev), output.cov_beta, interval, 'Channel', residualVariance=output.res_var, inverseConditionNumber=output.inv_condnum, relativeError=output.rel_error, haltingReasons='\n'.join(output.stopreason))
+#	gaussParams = ({'a':a, 'b':b, 'c':c},variance_matrix,{'a':err_a, 'b':err_b, 'c':err_c},countSum)
+	fittedGaussian = fittedOdrFunction(gaussianOdr, params)
+	addFunctionToPlot(axes, interval['Channel'], fittedGaussian, fmt=config.fittedformat)
+	fig.show()
+	return (gaussParams, countSum)
 
 def processAndPlotEnergyCalibrationData(energyCalibrationData):
 	x = energyCalibrationData['Peak']
@@ -134,28 +140,22 @@ def processAndPlotEnergyCalibrationData(energyCalibrationData):
 	y = energyCalibrationData['Energy']
 	y_err = energyCalibrationData['EnergyErr']
 	(fig, axes) = createEmptyPlottingArea('Channel', 'Energy')
-	print 'Energy Calibration'
-	print x
-	print y
-	print x_err
-	print y_err
 	addDataWithErrorBarsToPlot(axes, x, y, x_err=x_err, y_err=y_err)
 	fig.show()
 	
 	#find fit for energy calibration
-	output = fitFunctionWithDoubleErr(x, y, x_err, y_err, fitFunction=lineOdr, startingParameters=[0.2,10.0])
+	output = fitFunctionOdr(x, y, x_err, y_err, fitFunction=lineOdr, startingParameters=[0.2,10.0])
 	
 	params = output.beta
-	variance_matrix = output.cov_beta
-	fit_errors = output.sd_beta #seems to calculated this for us already
+	param_std_dev = output.sd_beta #seems to calculated this for us already
 	
-	print (params, variance_matrix, fit_errors)
+	print (params, param_std_dev)
+	energyCalibrationFit = FitData(TestData(['Param','Value','Std Dev'], ['a','b'], params, param_std_dev), output.cov_beta, energyCalibrationData, 'Peak', residualVariance=output.res_var, inverseConditionNumber=output.inv_condnum, relativeError=output.rel_error, haltingReasons='\n'.join(output.stopreason))
+	
 	(a,b) = params #fits for line
-	print variance_matrix
-	fittedLine = fittedFunction(line, a, b)
-	addFunctionToPlot(axes, x, fittedLine, config.gaussianformat)
+	fittedLine = fittedOdrFunction(lineOdr, params)
+	addFunctionToPlot(axes, x, fittedLine, config.fittedformat)
 	fig.show()
-	energyCalibrationFit = {'params':params, 'variance_matrix':variance_matrix, 'fit_errors':fit_errors, 'x':x, 'x_err': x_err, 'y':y, 'y_err':y_err}
 	return energyCalibrationFit
 
 # See http://matplotlib.org/api/widgets_api.html for info on the widgets
@@ -166,20 +166,21 @@ class MainGuiController(object):
 	currentInterval = None #last chosen interval
 	currentGaussParams = None
 	currentEnergyCalibrationFit = None
-	gaussianFits = [] #list of chosen intervals
+	gaussianFits = [] #list of chosen intervals and fit parameters
 	spanSelector = None #the thingie that helps you select a part of the graph
 	fig = None # the figure on which the plot is drawn
 	axes = None # this is basically the plot
 	dataWithCountErr = [] #our data (Channel, Count, CountErr)
 	peakData = None
 
-	def run(self, dataWithCountErr, start=0, end=4096):
+	def run(self, dataWithCountErr, basefilename, start, end):
 		(fig,axes) = plotRangeTo(dataWithCountErr, start, end) #(data, save file name, start range data, end range data)
 		self.fig = fig
 		self.axes = axes
 		self.dataWithCountErr = dataWithCountErr
+		self.basefilename = basefilename
 		fig.canvas.mpl_connect('key_press_event', self.handle_key) #make it so we handle keypress events
-		self.peakData = TestData(['Peak','PeakErr'],[], [])
+		self.peakData = TestData(['Param','Peak','PeakErr'],[], [],[])
 		plt.show()
 
 	#Callback functions
@@ -194,10 +195,8 @@ class MainGuiController(object):
 		else:
 			self.currentGaussParams = None #reset gaussian params before we change the interval (just in case someone tries to save the interval and gaussians: we'd get the new interval with the gaussian parameters of the previous interval)
 			print 'Range %3.2f --> %3.2f selected for gaussian fit' % (self.currentStartEnd[0], self.currentStartEnd[1])
-			self.currentInterval = self.dataWithCountErr[self.currentStartEnd[0]:self.currentStartEnd[1]]
-			print 'currentInterval set to {0}'.format(self.currentInterval)
-			#self.currentInterval is the interval your gaussian will go on, you can change this with backgrounds as you want
-			#SUBSTRACT linear BACKGROUND HERE
+			self.currentInterval = self.dataWithCountErr.extractRows(self.currentStartEnd[0],self.currentStartEnd[1], byFieldName='Channel')
+			#print 'currentInterval set to \n {0}'.format(self.currentInterval)
 			(a,b,c) = getDefaultsForGaussianFit(self.currentInterval)
 			showStartingValuesDialog({'a':a, 'b':b, 'c':c, 'iterations': 1000},self.calculateGaussian)
 	def calculateGaussian(self, parameters):
@@ -205,37 +204,46 @@ class MainGuiController(object):
 		start_b = float(parameters['b'])
 		start_c = float(parameters['c'])
 		max_iterations = int(parameters['iterations'])
-		self.currentGaussParams = fitGaussianAndAddToPlot(self.currentInterval, [start_a,start_b,start_c], max_iterations, self.fig, self.axes)
+		self.currentGaussParams = fitGaussianAndAddToPlotOdr(self.currentInterval, [start_a,start_b,start_c], max_iterations, self.fig, self.axes)
 	def addGaussianToList(self):
 		if self.currentGaussParams == None or self.currentInterval == None:
 			print 'Error, no gaussian fit calculated'
 		else:
-			(params, variance_matrix, fit_errors) = self.currentGaussParams
-			self.peakData = self.peakData.withRow(params['b'], fit_errors['b'])
-			self.gaussianFits.append({'params':params, 'variance_matrix':variance_matrix, 'fit_errors':fit_errors, 'interval':self.currentInterval})
-			print 'Gaussian fit added to list with {0} and interval {1} --> {2}'.format(params,self.currentInterval[0],self.currentInterval[-1])
+			(fitData, countSum) = self.currentGaussParams
+			self.peakData = self.peakData.withRow(fitData.params.extractRow('b','Param'))
+			self.gaussianFits.append((fitData, countSum))
+			print 'Gaussian fit added to list with {0} and interval {1} --> {2}'.format(fitData.params['Value'],self.currentInterval[0],self.currentInterval[-1])
 			#after adding to list, clear our temporary values
 			self.currentGaussParams = None
 			self.currentInterval = None
 	def calibrateEnergy(self):
 		showCorrelateEnergyDialog(self.peakData, self.processCalibratedEnergy)
 	def processCalibratedEnergy(self, energyCalibrationData):
-		self.peakData = TestData(['Peak','PeakErr'],[], []) #reset peak data
+		self.peakData = TestData(['Param','Peak','PeakErr'],[], [],[]) #reset peak data
 		#print [{	'params' : f['params'], 'fit_errors' : f['fit_errors'], 'energy' : f['energy'], 'interval' : getIntervalString(f['interval'])}for f in fitData]
 		self.currentEnergyCalibrationFit = processAndPlotEnergyCalibrationData(energyCalibrationData)
-	def saveEnergyCalibration(self):
-		if self.currentEnergyCalibrationFit != None:
-			fit = self.currentEnergyCalibrationFit
-			f = open(energycalibrationparamsavefile, 'w')
-			f.write('Params:\n{params}\n\nVariance matrix:\n{variance_matrix}\n\nFit errors:\n{fit_errors\n\n}'.format(fit))
-			f.close()
+		self.saveSelectedGaussianFits()
+		self.saveEnergyCalibration()
+	def saveSelectedGaussianFits(self):
+		f = open(self.basefilename + config.gaussianFitDataSuffix + '.txt', 'w')
+		for fit in self.gaussianFits:
+			(fitdata, countsum) = fit
+			f.write(fitdata.text())
+			f.write('\n\n')
+			f.write('Area under selected interval: {0}'.format(countsum))
+			f.write('\n\n\n')
+		f.close()
+		print 'Selected gaussian fits saved'
 			
-			csvLines = [';'.join(row) for row in zip(fit['x'],fit['x_err'],fit['y'],fit['y_err'])]
-			csvData = '\n'.join(csvLines)
-			f = open(energycalibrationdatasavefile,'w')
-			f.write(csvData)
-			f.close()
-		
+	def saveEnergyCalibration(self):
+		fit = self.currentEnergyCalibrationFit
+		f = open(self.basefilename + config.energyFitDataSuffix + '.txt', 'w')
+		f.write(fit.text())
+		f.close()
+		f = open(self.basefilename + config.energyFitCsvSuffix + '.csv', 'w')
+		f.write(fit.params.text(fieldSeparator=';'))
+		f.close()
+		print 'Energy calibration saved'
 	
 	#Handle key presses
 	def handle_key(self, event):
@@ -260,9 +268,11 @@ class MainGuiController(object):
 
 if __name__ == '__main__': #means it's only gonna work when run from the command line
 	printHello()
+	datafilename = config.datafile
+	bkgfilename = config.backgroundfile
 	#execute this if this file gets executed
-	rawData, dataduration = getDataRows(config.datafile)
-	background, bkgduration = getDataRows(config.backgroundfile)
+	rawData, dataduration = getDataRows(datafilename)
+	background, bkgduration = getDataRows(bkgfilename)
 	#scale background counts to time length of actual test run: scaledbkgcounts = bkgcounts * (dataduration/bkgduration)
 	scaledbkgcounts = numpy.multiply(background['Count'],dataduration/bkgduration)
 	#calculate countErr:
@@ -277,7 +287,8 @@ if __name__ == '__main__': #means it's only gonna work when run from the command
 	#subtract real background
 	correctedData = rawData.subtractFromColumn('Count', scaledbkgcounts)
 	correctedDataWithCountErr = correctedData.withColumn('CountErr',countErr)
-	MainGuiController().run(correctedDataWithCountErr, start=0, end=4096)
+	basefilename = os.path.basename(datafilename)[0:-4] #basename gets just the filename, [0:-4] gets the part without the extension
+	MainGuiController().run(correctedDataWithCountErr, basefilename, start=0, end=4096)
 
 
 

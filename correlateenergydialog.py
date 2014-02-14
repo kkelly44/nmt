@@ -33,21 +33,21 @@ class CorrelateEnergyDialog(Frame):
 		self.peakData = peakData
 		self.callback = callback
 		for rowNb in range(0,len(self.peakData)): #why not just iterate over fitData instead of over a range? Because we want to be sure of the ordering for adding energy levels later
-			row = self.peakData[rowNb]
+			dataRow = self.peakData[rowNb]
 
 			self.rowconfigure(count, pad=3)
-			label = Label(self, text="Peak {}".format(rowNb+1))
+			label = Label(self, text="Peak {0}".format(rowNb+1))
 			label.grid(row=count, column=0, columnspan=4)
 			count = count + 1
 
 			self.rowconfigure(count, pad=3)
 			label = Label(self, text='Peak')
 			label.grid(row=count, column=0)
-			label = Label(self, text=row['Peak'])
+			label = Label(self, text=dataRow['Peak'])
 			label.grid(row=count, column=1)
 			label = Label(self, text='Err')
 			label.grid(row=count, column=2)
-			label = Label(self, text=row['PeakErr'])
+			label = Label(self, text=dataRow['PeakErr'])
 			label.grid(row=count, column=3)
 			count = count + 1
 
