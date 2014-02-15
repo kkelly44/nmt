@@ -18,9 +18,12 @@ def addDataWithErrorBarsToPlot(axes, x, y, x_err=None, y_err=None, fmt='-', labe
 	(plotline, caplines, barlinecols) = axes.errorbar(x, y, fmt = fmt, xerr=x_err, yerr = y_err, label=label)
 	return (plotline, caplines, barlinecols) #Values on which matplotlib bases its plotting (should you need to fiddle with them)
 
-def createEmptyPlottingArea(xAxisLabel, yAxisLabel, figWidth=16, figHeight=10, x_majorticks = -1, x_minorticks = -1, x_length=1000, y_majorticks = -1, y_minorticks = -1, y_length=10000, fontsize=14): 
-	fig = plt.figure(figsize=(16, 10)) # open empty image
-	ax = fig.add_subplot(111) #change the values to add more plots #add a (sub)plot
+# See http://matplotlib.org/api/figure_api.html
+def createFigure(*figargs, **figkwargs):
+	return plt.figure(*figargs, **figkwargs)
+	
+def addSinglePlottingArea(figure, xAxisLabel, yAxisLabel, x_majorticks = -1, x_minorticks = -1, x_length=10000, y_majorticks = -1, y_minorticks = -1, y_length=10000, fontsize=14):
+	ax = figure.add_subplot(111) #change the values to add more plots #add a (sub)plot
 	
 	ax.set_xlabel(xAxisLabel, fontsize = fontsize) #set axis name
 	if x_majorticks != -1:
@@ -34,4 +37,9 @@ def createEmptyPlottingArea(xAxisLabel, yAxisLabel, figWidth=16, figHeight=10, x
 	if x_minorticks != -1:
 		ax.set_yticks(numpy.arange(0,y_length,y_minorticks), True) #set minor ticks
 
+	return ax
+
+def createEmptyPlottingArea(xAxisLabel, yAxisLabel, figWidth=16, figHeight=10, x_majorticks = -1, x_minorticks = -1, x_length=10000, y_majorticks = -1, y_minorticks = -1, y_length=10000, fontsize=14): 
+	fig = plt.figure(figsize=(16, 10)) # open empty image
+	ax = addSinglePlottingArea(fig, xAxisLabel, yAxisLabel, x_majorticks, x_minorticks, x_length, y_majorticks, y_minorticks, y_length, fontsize)
 	return (fig,ax)
