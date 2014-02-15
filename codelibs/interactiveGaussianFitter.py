@@ -7,13 +7,7 @@ from startingvaluesdialog import showStartingValuesDialog
 from data import TestData, FitData
 
 # Passing config is a hack TODO fix this more cleanly later
-def fitGaussianAndAddToPlotOdr(interval, startingGaussianParameters, max_iterations, fig, axes, nb_of_fits, config):
-	x = interval['Channel']
-	y = interval['Count']
-	x_err = None #Just making it explicit that we don't have an x_err at this point
-	y_err = interval['CountErr']
-	
-	(x,y,x_err,y_err) = removeDC(x,y,x_err,y_err)
+def fitGaussianAndAddToPlotOdr(interval, xfield, x, y, x_err, y_err, startingGaussianParameters, max_iterations, fig, axes, nb_of_fits, config, label):
 	countSum = numpy.sum(y)
 	
 	output = fitFunctionOdr(x, y, x_err, y_err, fitFunction=gaussianOdr, startingParameters=startingGaussianParameters)
@@ -22,10 +16,10 @@ def fitGaussianAndAddToPlotOdr(interval, startingGaussianParameters, max_iterati
 	print 'Params: ', params, '\nParam Std Dev: ', param_std_dev
 #	(a,b,c) = params
 #	(err_a, err_b, err_c) = fit_errors
-	gaussParams = FitData(TestData(['Param','Value','Std Dev'], ['a','b','c'], params, param_std_dev), output.cov_beta, interval, 'Channel', residualVariance=output.res_var, inverseConditionNumber=output.inv_condnum, relativeError=output.rel_error, haltingReasons='\n'.join(output.stopreason))
+	gaussParams = FitData(TestData(['Param','Value','Std Dev'], ['a','b','c'], params, param_std_dev), output.cov_beta, interval, xfield, residualVariance=output.res_var, inverseConditionNumber=output.inv_condnum, relativeError=output.rel_error, haltingReasons='\n'.join(output.stopreason))
 #	gaussParams = ({'a':a, 'b':b, 'c':c},variance_matrix,{'a':err_a, 'b':err_b, 'c':err_c},countSum)
 	fittedGaussian = fittedOdrFunction(gaussianOdr, params)
-	addFunctionToPlot(axes, interval['Channel'], fittedGaussian, fmt=config.gaussianfitformats[nb_of_fits%len(config.gaussianfitformats)], label=config.gaussianlabelbase+'{0} --> {1}'.format(interval[0]['Channel'],interval[-1]['Channel']))
+	addFunctionToPlot(axes, x, fittedGaussian, fmt=config.gaussianfitformats[nb_of_fits%len(config.gaussianfitformats)], label=label)
 	axes.legend()
 	fig.show()
 	return (gaussParams, countSum)
@@ -41,7 +35,7 @@ class InteractiveGaussianFitTestDataFigure(InteractiveFigure):
 	spanSelector = None #the thingie that helps you select a part of the graph
 	axes = None # this is basically the plot
 	
-	def __init__(self, testData, basefilename, start, end, xAxisLabel, yAxisLabel, x_majorticks = -1, x_minorticks = -1, x_length=10000, y_majorticks = -1, y_minorticks = -1, y_length=10000, fontsize=14, extraKeybindings = None, config=None, figWidth=16, figHeight=10):
+	def __init__(self, testData, xfield, xerrfield, yfield, yerrfield, basefilename, start, end, xAxisLabel, yAxisLabel, x_majorticks = -1, x_minorticks = -1, x_length=10000, y_majorticks = -1, y_minorticks = -1, y_length=10000, fontsize=14, extraKeybindings = None, config=None, figWidth=16, figHeight=10):
 		self.testData = testData
 		internalKeyBindings = {
 			'c': (self.toggleSpanSelector, "'c' to start the selector. Drag and drop over the area. The selection will show up in commandline. You can keep selecting until the desired invertal is selected. Click C again to stop the selector (useful when zooming in).  You only need to click 'c' once to start the selector."),
@@ -54,16 +48,26 @@ class InteractiveGaussianFitTestDataFigure(InteractiveFigure):
 			keybindings = internalKeyBindings
 		super(InteractiveGaussianFitTestDataFigure, self).__init__(keybindings, figsize=(figWidth, figHeight))
 		self.axes = addSinglePlottingArea(self.fig, xAxisLabel, yAxisLabel, x_majorticks, x_minorticks, x_length, y_majorticks, y_minorticks, y_length, fontsize)
+		self.xfield = xfield
+		self.xerrfield = xerrfield
+		self.yfield = yfield
+		self.yerrfield = yerrfield
 		self.testData = testData
 		self.basefilename = basefilename
 		self.config = config
 		self.axes.set_title(config.testdatatitle)
 
-		channel = testData['Channel'][start:end]
-		count = testData['Count'][start:end]
-		countErr = testData['CountErr'][start:end]
-
-		addDataWithErrorBarsToPlot(self.axes, channel, count, y_err=countErr, fmt=config.testdataplotformat, label=config.testdatalabel)
+		x = testData[self.xfield][start:end]
+		y = testData[self.yfield][start:end]
+		if self.xerrfield != None:
+			x_err = testData[self.xerrfield][start:end]
+		else:
+			x_err = None
+		if self.yerrfield != None:
+			y_err = testData[self.yerrfield][start:end]
+		else:
+			y_err = None
+		addDataWithErrorBarsToPlot(self.axes, x, y, x_err=x_err, y_err=y_err, fmt=config.testdataplotformat, label=config.testdatalabel)
 		self.axes.legend()
 
 	#Callback functions
@@ -85,16 +89,28 @@ class InteractiveGaussianFitTestDataFigure(InteractiveFigure):
 		else:
 			self.currentGaussParams = None #reset gaussian params before we change the interval (just in case someone tries to save the interval and gaussians: we'd get the new interval with the gaussian parameters of the previous interval)
 			print 'Range %3.2f --> %3.2f selected for gaussian fit' % (self.currentStartEnd[0], self.currentStartEnd[1])
-			self.currentInterval = self.testData.extractRows(self.currentStartEnd[0],self.currentStartEnd[1], byFieldName='Channel')
+			self.currentInterval = self.testData.extractRows(self.currentStartEnd[0],self.currentStartEnd[1], byFieldName=self.xfield)
 			#print 'currentInterval set to \n {0}'.format(self.currentInterval)
-			(a,b,c) = getDefaultsForGaussianFit(x = self.currentInterval['Channel'], y = self.currentInterval['Count'])
+			(a,b,c) = getDefaultsForGaussianFit(x = self.currentInterval[self.xfield], y = self.currentInterval[self.yfield])
 			showStartingValuesDialog({'a':a, 'b':b, 'c':c, 'iterations': 1000},self.calculateGaussian)
 	def calculateGaussian(self, parameters):
 		start_a = float(parameters['a'])
 		start_b = float(parameters['b'])
 		start_c = float(parameters['c'])
 		max_iterations = int(parameters['iterations'])
-		self.currentGaussParams = fitGaussianAndAddToPlotOdr(self.currentInterval, [start_a,start_b,start_c], max_iterations, self.fig, self.axes, nb_of_fits=len(self.gaussianFits), config = self.config)
+		x = self.currentInterval[self.xfield]
+		y = self.currentInterval[self.yfield]
+		if self.xerrfield != None:
+			x_err = self.currentInterval[self.xerrfield]
+		else:
+			x_err = None
+		if self.yerrfield != None:
+			y_err = self.currentInterval[self.yerrfield]
+		else:
+			y_err = None
+		(x,y,x_err,y_err) = removeDC(x,y,x_err,y_err)
+		label = self.config.gaussianlabelbase+'{0} --> {1}'.format(self.currentInterval[0][self.xfield],self.currentInterval[-1][self.xfield])
+		self.currentGaussParams = fitGaussianAndAddToPlotOdr(self.currentInterval, self.xfield, x, y, x_err, y_err, [start_a,start_b,start_c], max_iterations, self.fig, self.axes, nb_of_fits=len(self.gaussianFits), config = self.config, label=label)
 	def addGaussianToList(self):
 		if self.currentGaussParams == None or self.currentInterval == None:
 			print 'Error, no gaussian fit calculated'

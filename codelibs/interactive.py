@@ -24,7 +24,7 @@ class InteractiveFigure(object):
 			
 	def printInstructions(self, intro='', prefix=''):
 		print intro
-		for (f, desc) in keybindings.values:
+		for (f, desc) in self.keybindings.values():
 			print prefix, desc
 		self.printDefaultInstructions(prefix)
 	

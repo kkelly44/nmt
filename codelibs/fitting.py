@@ -109,9 +109,11 @@ def fitFunctionLeastSq(func, x, y, startingParameters, y_err=None, max_iteration
 
 # See http://docs.scipy.org/doc/scipy/reference/generated/scipy.odr.ODR.html#scipy.odr.ODR
 #  class scipy.odr.ODR(data, model, beta0=None, delta0=None, ifixb=None, ifixx=None, job=None, iprint=None, errfile=None, rptfile=None, ndigit=None, taufac=None, sstol=None, partol=None, maxit=None, stpb=None, stpd=None, sclb=None, scld=None, work=None, iwork=None)
+# See http://docs.scipy.org/doc/scipy/reference/generated/scipy.odr.Output.html
 def fitFunctionOdr(x, y, x_err, y_err, fitFunction, startingParameters):
 	model = odr.Model(fitFunction)
 	mydata = odr.RealData(x, y, sx=x_err, sy=y_err)
 	myodr = odr.ODR(mydata, model, beta0=startingParameters)
 	myoutput = myodr.run()
+	print myoutput.stopreason
 	return myoutput
