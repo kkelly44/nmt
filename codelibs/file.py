@@ -2,13 +2,11 @@ from data import TestData
 import re, numpy
 from datetime import datetime
 from common import isNotEmptyString
-def loadTestFile(filename, fileformat, dateformat):
+def loadTestFile(filename, durationRegex):
 	# Get info from filename
-	matchresult = re.search(fileformat, filename)
-	testdate = datetime.strptime(matchresult.group(1), dateformat)
-	testtype = matchresult.group(2)
-	testduration = int(matchresult.group(3))
-	print 'Loaded file {0} \nRun on {1}\nOf type {2}\nDuration {3} seconds'.format(filename, testdate, testtype, testduration) 
+	matchresult = re.search(durationRegex, filename)
+	testduration = int(matchresult.group(1))
+	print 'Loaded file {0} with duration {1} seconds'.format(filename, testduration) 
 	# Read file contents into contents
 	dataFile = open(filename)
 	contents = dataFile.read()
@@ -36,21 +34,26 @@ def loadTestFile(filename, fileformat, dateformat):
 	# Return the data
 	return (data, testduration)
 	
-def loadTestFileWithBackgroundAndCalculateCountErr(datafilename, bkgfilename, fileformat, dateformat):
-	rawData, dataduration = loadTestFile(datafilename, fileformat, dateformat)
-	background, bkgduration = loadTestFile(bkgfilename, fileformat, dateformat)
-	#scale background counts to time length of actual test run: scaledbkgcounts = bkgcounts * (dataduration/bkgduration)
-	scaledbkgcounts = numpy.multiply(background['Count'],dataduration/bkgduration)
+def loadTestFileWithBackgroundAndCalculateCountErr(datafilename, bkgfilename, durationRegex, scaleToDuration=-1):
+	rawData, dataduration = loadTestFile(datafilename, durationRegex)
+	background, bkgduration = loadTestFile(bkgfilename, durationRegex)
+	if scaleToDuration <= 0:
+		#scale background counts to time length of actual test run: scaledbkgcounts = bkgcounts * (dataduration/bkgduration)
+		scaledbkgcounts = numpy.multiply(background['Count'],float(dataduration)/float(bkgduration))
+		data = rawData
+	else:
+		scaledbkgcounts = numpy.multiply(background['Count'],float(scaleToDuration)/float(bkgduration))
+		data = rawData.applyFunctionToColumn(lambda x: x*float(scaleToDuration)/float(dataduration), 'Count')
 	#calculate countErr:
-	#rawData = sqrt(count_raw)
-	#background = sqrt(count_back)
-	#combined = sqrt( raw_err**2 + back_err**2 ) = sqrt(sqrt(count_raw)**2 + sqrt(count_back)**2) = sqrt(abs(count_raw) + abs(count_back))
+	#data = sqrt(count_data)
+	#scaledbackground = sqrt(count_back)
+	#combined = sqrt( data_err**2 + back_err**2 ) = sqrt(sqrt(count_data)**2 + sqrt(count_back)**2) = sqrt(abs(count_data) + abs(count_back))
 	countErr = 	numpy.sqrt(
 					numpy.add(
-						numpy.absolute(rawData['Count']), numpy.absolute(scaledbkgcounts)
+						numpy.absolute(data['Count']), numpy.absolute(scaledbkgcounts)
 					)
 				)
 	#subtract real background
-	correctedData = rawData.subtractFromColumn('Count', scaledbkgcounts)
+	correctedData = data.subtractFromColumn('Count', scaledbkgcounts)
 	correctedDataWithCountErr = correctedData.withColumn('CountErr',countErr)
 	return correctedDataWithCountErr

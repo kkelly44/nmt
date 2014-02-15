@@ -64,7 +64,7 @@ if __name__ == '__main__':
 	mgc.init(config.datastart, config.dataend)
 	mgc.setTitle(config.title)
 	for (filepath, label, fmt) in config.inputfiles:
-		data = loadTestFileWithBackgroundAndCalculateCountErr(filepath, config.background, config.datafileformatregex, config.dateformat)
+		data = loadTestFileWithBackgroundAndCalculateCountErr(filepath, config.background, config.durationRegex, config.rescaletoduration)
 		mgc.addPlot(data, label, fmt)
 	mgc.generateLegend()
 	mgc.show()

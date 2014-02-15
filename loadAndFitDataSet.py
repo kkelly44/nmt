@@ -37,14 +37,17 @@ def printHello():
 #	c = len(interval)/6
 #	return (a,b,c)
 
-def plotRangeTo(dataWithCountErr, start, end): 
+def plotTestData(dataWithCountErr, start, end): 
 	(fig, axes) = createEmptyPlottingArea(config.test_x_axis_label, config.test_y_axis_label, x_majorticks=config.test_x_majorticks, x_minorticks=config.test_x_minorticks, x_length=end-start, fontsize = config.fontsize, figWidth=config.plotwidth, figHeight=config.plotheight)
+
+	axes.set_title(config.testdatatitle)
 
 	channel = dataWithCountErr['Channel'][start:end]
 	count = dataWithCountErr['Count'][start:end]
 	countErr = dataWithCountErr['CountErr'][start:end]
 
-	addDataWithErrorBarsToPlot(axes, channel, count, y_err=countErr, fmt=config.testdataplotformat)
+	addDataWithErrorBarsToPlot(axes, channel, count, y_err=countErr, fmt=config.testdataplotformat, label=config.testdatalabel)
+	axes.legend()
 	return (fig,axes)
 
 	
@@ -73,7 +76,7 @@ def plotRangeTo(dataWithCountErr, start, end):
 #		print 'Error creating gaussian fit: {0}'.format(errmsg)
 #		return None
 
-def fitGaussianAndAddToPlotOdr(interval, startingGaussianParameters, max_iterations, fig, axes):
+def fitGaussianAndAddToPlotOdr(interval, startingGaussianParameters, max_iterations, fig, axes, nb_of_fits):
 	x = interval['Channel']
 	y = interval['Count']
 	x_err = None #Just making it explicit that we don't have an x_err at this point
@@ -91,7 +94,8 @@ def fitGaussianAndAddToPlotOdr(interval, startingGaussianParameters, max_iterati
 	gaussParams = FitData(TestData(['Param','Value','Std Dev'], ['a','b','c'], params, param_std_dev), output.cov_beta, interval, 'Channel', residualVariance=output.res_var, inverseConditionNumber=output.inv_condnum, relativeError=output.rel_error, haltingReasons='\n'.join(output.stopreason))
 #	gaussParams = ({'a':a, 'b':b, 'c':c},variance_matrix,{'a':err_a, 'b':err_b, 'c':err_c},countSum)
 	fittedGaussian = fittedOdrFunction(gaussianOdr, params)
-	addFunctionToPlot(axes, interval['Channel'], fittedGaussian, fmt=config.fittedformat)
+	addFunctionToPlot(axes, interval['Channel'], fittedGaussian, fmt=config.gaussianfitformats[nb_of_fits%len(config.gaussianfitformats)], label=config.gaussianlabelbase+'{0} --> {1}'.format(interval[0]['Channel'],interval[-1]['Channel']))
+	axes.legend()
 	fig.show()
 	return (gaussParams, countSum)
 
@@ -101,7 +105,9 @@ def processAndPlotEnergyCalibrationData(energyCalibrationData):
 	y = energyCalibrationData['Energy']
 	y_err = energyCalibrationData['EnergyErr']
 	(fig, axes) = createEmptyPlottingArea(config.energy_x_axis_label, config.energy_y_axis_label, fontsize = config.fontsize, figWidth=config.plotwidth, figHeight=config.plotheight)
-	addDataWithErrorBarsToPlot(axes, x, y, x_err=x_err, y_err=y_err, fmt=config.energyplotformat)
+	axes.set_title(config.energytitle)
+	addDataWithErrorBarsToPlot(axes, x, y, x_err=x_err, y_err=y_err, fmt=config.energyplotformat, label=config.energyplotlabel)
+	axes.legend()
 	fig.show()
 	
 	#find fit for energy calibration
@@ -115,7 +121,8 @@ def processAndPlotEnergyCalibrationData(energyCalibrationData):
 	
 	(a,b) = params #fits for line
 	fittedLine = fittedOdrFunction(lineOdr, params)
-	addFunctionToPlot(axes, x, fittedLine, config.energyfitplotformat)
+	addFunctionToPlot(axes, x, fittedLine, config.energyfitplotformat, label=config.energyfitplotlabel)
+	axes.legend()
 	fig.show()
 	return energyCalibrationFit
 
@@ -135,7 +142,7 @@ class MainGuiController(object):
 	peakData = None
 
 	def run(self, dataWithCountErr, basefilename, start, end):
-		(fig,axes) = plotRangeTo(dataWithCountErr, start, end) #(data, save file name, start range data, end range data)
+		(fig,axes) = plotTestData(dataWithCountErr, start, end) #(data, save file name, start range data, end range data)
 		self.fig = fig
 		self.axes = axes
 		self.dataWithCountErr = dataWithCountErr
@@ -165,7 +172,7 @@ class MainGuiController(object):
 		start_b = float(parameters['b'])
 		start_c = float(parameters['c'])
 		max_iterations = int(parameters['iterations'])
-		self.currentGaussParams = fitGaussianAndAddToPlotOdr(self.currentInterval, [start_a,start_b,start_c], max_iterations, self.fig, self.axes)
+		self.currentGaussParams = fitGaussianAndAddToPlotOdr(self.currentInterval, [start_a,start_b,start_c], max_iterations, self.fig, self.axes, nb_of_fits=len(self.gaussianFits))
 	def addGaussianToList(self):
 		if self.currentGaussParams == None or self.currentInterval == None:
 			print 'Error, no gaussian fit calculated'
@@ -232,6 +239,6 @@ if __name__ == '__main__': #means it's only gonna work when run from the command
 	printHello()
 	datafilename = config.datafile
 	bkgfilename = config.backgroundfile
-	data = loadTestFileWithBackgroundAndCalculateCountErr(datafilename, bkgfilename, config.datafileformatregex, config.dateformat)
+	data = loadTestFileWithBackgroundAndCalculateCountErr(datafilename, bkgfilename, config.durationRegex)
 	basefilename = os.path.basename(datafilename)[0:-4] #basename gets just the filename, [0:-4] gets the part without the extension
 	MainGuiController().run(data, basefilename, start=config.datastart, end=config.dataend)
