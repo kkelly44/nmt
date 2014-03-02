@@ -1,4 +1,4 @@
-import numpy, config
+import numpy
 from common import padWithTabsToLength, debug
 	
 ################################
