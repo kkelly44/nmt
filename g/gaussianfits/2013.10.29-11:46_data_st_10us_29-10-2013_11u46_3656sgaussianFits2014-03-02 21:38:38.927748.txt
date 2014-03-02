@@ -1,0 +1,54 @@
+Interval: 25.0 -> 181.0
+Residual variance: 2.70191392719
+			'Inverse condition number: 0.251872478412
+			'Relative error in function values: 5.96074673101e-14
+			'Reason(s) for Halting: Sum of squares convergence
+Covariance matrix: 
+203.649886205	0.0307651390665	-0.436741648628
+0.0307651390665	0.0143374417732	-0.000352011545627
+-0.436741648628	-0.000352011545627	0.0057387586357
+
+Param	Value			Std Dev			
+a		2777.02655628	23.457290206	
+b		106.319429154	0.196821070029	
+c		17.7503124842	0.12452161211	
+
+Area under selected interval: 121403.314542
+
+
+Interval: 301.0 -> 486.0
+Residual variance: 1.19729299625
+			'Inverse condition number: 0.0598714517306
+			'Relative error in function values: 9.12388341038e-13
+			'Reason(s) for Halting: Sum of squares convergence
+Covariance matrix: 
+31.0802089594	0.00686807959505	-0.407379139767
+0.00686807959505	0.0294776263093	-0.000409921932197
+-0.407379139767	-0.000409921932197	0.0182981592549
+
+Param	Value			Std Dev			
+a		754.749773583	6.10017348189	
+b		397.892186191	0.187865258966	
+c		22.4985141747	0.148014384166	
+
+Area under selected interval: 42940.7608618
+
+
+Interval: 541.0 -> 647.0
+Residual variance: 1.17994416378
+			'Inverse condition number: 0.0276338799825
+			'Relative error in function values: 3.75568490669e-12
+			'Reason(s) for Halting: Sum of squares convergence
+Covariance matrix: 
+4.83179137388	-0.101675696742	-1.46792310136
+-0.101675696742	1.21280505395	0.116698827657
+-1.46792310136	0.116698827657	1.26228838202
+
+Param	Value			Std Dev			
+a		48.1977759744	2.38772779693	
+b		607.889270835	1.19626177955	
+c		21.609534101	1.22042198004	
+
+Area under selected interval: 2557.14254937
+
+

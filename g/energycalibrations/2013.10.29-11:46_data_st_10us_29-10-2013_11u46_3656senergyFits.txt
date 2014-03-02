@@ -1,0 +1,12 @@
+Interval: 106.319429154 -> 607.889270835
+Residual variance: 0.180057136016
+			'Inverse condition number: 0.168732651777
+			'Relative error in function values: 3.09899293384e-14
+			'Reason(s) for Halting: Sum of squares convergence
+Covariance matrix: 
+8.99315250596e-07	-0.000117667575415
+-0.000117667575415	0.0248534196906
+
+Param	Value			Std Dev				
+a		0.0273556918457	0.000402402942829	
+b		3.7892119894	0.0668957066611		
