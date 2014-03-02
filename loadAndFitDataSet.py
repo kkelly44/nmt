@@ -87,10 +87,10 @@ class MainGuiController(InteractiveGaussianFitTestDataFigure):
 		self.saveEnergyCalibration()
 	def saveEnergyCalibration(self):
 		fit = self.currentEnergyCalibrationFit
-		f = open(self.basefilename + config.energyFitDataSuffix + '.txt', 'w')
+		f = open(os.path.join(config.energyFitDir, self.basefilename + config.energyFitDataSuffix + '.txt'), 'w')
 		f.write(fit.text(config.tabWidth))
 		f.close()
-		f = open(self.basefilename + config.energyFitCsvSuffix + '.csv', 'w')
+		f = open(os.path.join(config.energyFitDir, self.basefilename + config.energyFitCsvSuffix + '.csv'), 'w')
 		f.write(fit.params.text(fieldSeparator=';'))
 		f.close()
 		print 'Energy calibration saved'

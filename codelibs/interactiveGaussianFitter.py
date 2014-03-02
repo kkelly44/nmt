@@ -1,10 +1,11 @@
-import numpy
+import numpy, os
 from interactive import InteractiveFigure
 from plotting import addDataWithErrorBarsToPlot, addSinglePlottingArea, addFunctionToPlot
 from matplotlib.widgets import SpanSelector
 from fitting import fittedOdrFunction, getDefaultsForGaussianFit, gaussianOdr, fitFunctionOdr, removeDC
 from startingvaluesdialog import showStartingValuesDialog
 from data import TestData, FitData
+from datetime import datetime
 
 # Passing config is a hack TODO fix this more cleanly later
 def fitGaussianAndAddToPlotOdr(interval, xfield, x, y, x_err, y_err, startingGaussianParameters, max_iterations, fig, axes, nb_of_fits, config, label):
@@ -124,7 +125,7 @@ class InteractiveGaussianFitTestDataFigure(InteractiveFigure):
 			self.currentInterval = None
 	def saveSelectedGaussianFits(self):
 		config = self.config
-		f = open(self.basefilename + config.gaussianFitDataSuffix + '.txt', 'w')
+		f = open(os.path.join(config.gaussianFitDir, self.basefilename + config.gaussianFitDataSuffix + str(datetime.today()) + '.txt'), 'w')
 		for fit in self.gaussianFits:
 			(fitdata, countsum) = fit
 			f.write(fitdata.text(config.tabWidth))

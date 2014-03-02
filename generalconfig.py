@@ -5,8 +5,10 @@ durationRegex = r'_(\d{2}\d*)s(_|\.csv)'
 
 # Output files configuration
 gaussianFitDataSuffix = 'gaussianFits'
+gaussianFitDir = 'g/gaussianfits'
 energyFitDataSuffix = 'energyFits'
 energyFitCsvSuffix = 'energyFits'
+energyFitDir = 'g/energycalibrations'
 tabWidth = 4 #number of spaces a tab is expected to be, used for lining up values
 
 # Debugging
