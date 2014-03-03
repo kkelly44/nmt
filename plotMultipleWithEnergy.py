@@ -63,8 +63,8 @@ if __name__ == '__main__':
 	mgc = MainGuiController()
 	mgc.init(config.datastart, config.dataend)
 	mgc.setTitle(config.title)
-	for (filepath, energyfitpath, label, fmt) in config.inputfiles:
-		data = loadTestFileAndCalculateEnergy(filepath, config.background, energyfitpath, config.durationRegex, config.rescaletoduration)
+	for (filepath, background, energyfitpath, label, fmt) in config.inputfiles:
+		data = loadTestFileAndCalculateEnergy(filepath, background, energyfitpath, config.durationRegex, config.rescaletoduration)
 		mgc.addPlot(data, label, fmt)
 	mgc.generateLegend()
 	mgc.show()
