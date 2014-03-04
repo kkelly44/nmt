@@ -15,4 +15,4 @@ tabWidth = 4 #number of spaces a tab is expected to be, used for lining up value
 debugfile = 'debug.txt' #to print things to large or unwieldy for commandline purposes (function is in common called debug)
 
 # Functions and fitting
-extremaOrder = 100 #How many points on each side to use to define something local maximum or minimum
+extremaOrder = 50 #How many points on each side to use to define something local maximum or minimum

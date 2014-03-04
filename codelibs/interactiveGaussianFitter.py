@@ -70,9 +70,9 @@ class InteractiveGaussianFitTestDataFigure(InteractiveFigure):
 		else:
 			y_err = None
 		addDataWithErrorBarsToPlot(self.axes, x, y, x_err=x_err, y_err=y_err, fmt=config.testdataplotformat, label=config.testdatalabel)
-		extrema = [(x[i],y[i]) for i in argrelmax(numpy.array(y), order=config.extremaOrder)[0]] #argrelmax gives the index of the maximums found in the array
-		for point in extrema:
-			self.axes.annotate('Max', point)
+#		extrema = [(x[i],y[i]) for i in argrelmax(numpy.array(y), order=config.extremaOrder)[0]] #argrelmax gives the index of the maximums found in the array
+#		for point in extrema:
+#			self.axes.annotate('Max', point)
 		self.axes.legend()
 
 	#Callback functions
