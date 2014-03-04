@@ -6,6 +6,7 @@ from fitting import fittedOdrFunction, getDefaultsForGaussianFit, gaussianOdr, f
 from startingvaluesdialog import showStartingValuesDialog
 from data import TestData, FitData
 from datetime import datetime
+from fitting import argrelmax
 
 # Passing config is a hack TODO fix this more cleanly later
 def fitGaussianAndAddToPlotOdr(interval, xfield, x, y, x_err, y_err, startingGaussianParameters, max_iterations, fig, axes, nb_of_fits, config, label):
@@ -69,6 +70,9 @@ class InteractiveGaussianFitTestDataFigure(InteractiveFigure):
 		else:
 			y_err = None
 		addDataWithErrorBarsToPlot(self.axes, x, y, x_err=x_err, y_err=y_err, fmt=config.testdataplotformat, label=config.testdatalabel)
+		extrema = [(x[i],y[i]) for i in argrelmax(numpy.array(y), order=config.extremaOrder)[0]] #argrelmax gives the index of the maximums found in the array
+		for point in extrema:
+			self.axes.annotate('Max', point)
 		self.axes.legend()
 
 	#Callback functions
