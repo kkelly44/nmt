@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html><head>
+   <title> [SciPy-User] scipy.odr - Goodness of fit and parameter estimation for explicit orthogonal distance regression
+   </title>
+   <link rel="Index" href="http://mail.scipy.org/pipermail/scipy-user/2012-May/index.html">
+   <link rel="made" href="mailto:scipy-user%40scipy.org?Subject=%5BSciPy-User%5D%20scipy.odr%20-%20Goodness%20of%20fit%20and%20parameter%0A%20estimation%20for%20explicit%20orthogonal%20distance%20regression&amp;In-Reply-To=CABo_DbCsygHe3nADrrBsA-%2BKhees2SMSPvEn3QJCbqU%2BX2RPaQ%40mail.gmail.com">
+   <meta name="robots" content="index,nofollow">
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+   <link rel="Previous" href="http://mail.scipy.org/pipermail/scipy-user/2012-May/032206.html">
+   <link rel="Next" href="http://mail.scipy.org/pipermail/scipy-user/2012-May/032228.html">
+ </head>
+ <body bgcolor="#ffffff">
+   <h1>[SciPy-User] scipy.odr - Goodness of fit and parameter estimation for explicit orthogonal distance regression</h1>
+    <b>Robert Kern</b> 
+    <a href="mailto:scipy-user%40scipy.org?Subject=%5BSciPy-User%5D%20scipy.odr%20-%20Goodness%20of%20fit%20and%20parameter%0A%20estimation%20for%20explicit%20orthogonal%20distance%20regression&amp;In-Reply-To=CABo_DbCsygHe3nADrrBsA-%2BKhees2SMSPvEn3QJCbqU%2BX2RPaQ%40mail.gmail.com" title="[SciPy-User] scipy.odr - Goodness of fit and parameter estimation for explicit orthogonal distance regression">robert.kern@gmail....
+       </a><br>
+    <i>Mon May 14 05:10:48 CDT 2012</i>
+    <p></p><ul>
+        <li>Previous message: <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/032206.html">[SciPy-User] scipy.odr - Goodness of fit and parameter estimation for explicit orthogonal distance regression
+</a></li>
+        <li>Next message: <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/032228.html">[SciPy-User] scipy.odr - Goodness of fit and parameter estimation for explicit orthogonal distance regression
+</a></li>
+         <li> <b>Messages sorted by:</b> 
+              <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/date.html#32207">[ date ]</a>
+              <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/thread.html#32207">[ thread ]</a>
+              <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/subject.html#32207">[ subject ]</a>
+              <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/author.html#32207">[ author ]</a>
+         </li>
+       </ul>
+    <hr>  
+<!--beginarticle-->
+<pre>On Mon, May 14, 2012 at 4:25 AM, Markus Baden &lt;<a href="http://mail.scipy.org/mailman/listinfo/scipy-user">markus.baden@gmail.com</a>&gt; wrote:
+&gt;<i> Hi list,
+</i>&gt;<i>
+</i>&gt;<i> Currently, I am trying to fit a quadratic curve to a data set which has much
+</i>&gt;<i> larger errors in the x than in the y direction. My errors are assumed to be
+</i>&gt;<i> normally distributed and I want to estimate the confidence interval of the
+</i>&gt;<i> fitted parameters. I have fitted the data two different ways. 1) I neglect
+</i>&gt;<i> the x errors and fit the quadratic by minimizing the weighted residuals (y
+</i>&gt;<i> -f) / sig_y via scipy.optimize.leastsq and 2) I use scipy.odr to fit the
+</i>&gt;<i> parameters. Both result similar fitted parameters.
+</i>&gt;<i>
+</i>&gt;<i> Now I am stuck with estimating the confidence intervals on these errors and
+</i>&gt;<i> I have a couple of questions.
+</i>
+scipy.odr provides an estimate of the covariance matrix and standard
+deviations of the parameter estimates. Getting the confidence interval
+for a parameter is just a matter of scaling up the standard deviations
+by the appropriate t-distribution value with nobs-nparams degrees of
+freedom. A paper by the ODRPACK implementors gives the formula
+explicitly on page 6:
+
+  <a href="http://www.mechanicalkern.com/static/odr_vcv.pdf">http://www.mechanicalkern.com/static/odr_vcv.pdf</a>
+
+It also has more information on how the covariance matrix is calculated.
+
+&gt;<i> My second question is related to method 2). Is there a way of accessing the
+</i>&gt;<i> goodness of fit for ODR, similar to calculating the reduced chi-squared for
+</i>&gt;<i> a fit that only has errors in the y?
+</i>
+Output.res_var is the reduced Chi-square. But you can compute it from
+scratch using the raw residuals. Output.eps are the differences in Y
+and Output.delta are the differences in X. Square each and multiply by
+their weights (a.k.a. divide by the data variances), then add up all
+of them. Divide by (nobs - nparams).
+
+&gt;<i> Another question along this line
+</i>&gt;<i> concerns the scipy.odr.ODR.Output.sd_beta attribute. In the docstring it
+</i>&gt;<i> says it is the standard error of the parameter, does that mean a 1 standard
+</i>&gt;<i> deviation confidence interval?
+</i>
+Yes.
+
+&gt;<i> And how exactly are they calculated. Tried to
+</i>&gt;<i> look at the source and in the odrpack guide, but unfortunately couldn't
+</i>&gt;<i> figure that out.
+</i>
+As given in the odr_vcv.pdf paper. Some slightly sparser details are
+also in the ODRPACK Guide in section "4.B. Covariance Matrix".
+
+-- 
+Robert Kern
+</pre>
+
+
+
+
+
+
+
+
+
+<!--endarticle-->
+    <hr>
+    <p></p><ul>
+        <!--threads-->
+	<li>Previous message: <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/032206.html">[SciPy-User] scipy.odr - Goodness of fit and parameter estimation for explicit orthogonal distance regression
+</a></li>
+	<li>Next message: <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/032228.html">[SciPy-User] scipy.odr - Goodness of fit and parameter estimation for explicit orthogonal distance regression
+</a></li>
+         <li> <b>Messages sorted by:</b> 
+              <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/date.html#32207">[ date ]</a>
+              <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/thread.html#32207">[ thread ]</a>
+              <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/subject.html#32207">[ subject ]</a>
+              <a href="http://mail.scipy.org/pipermail/scipy-user/2012-May/author.html#32207">[ author ]</a>
+         </li>
+       </ul>
+
+<hr>
+<a href="http://mail.scipy.org/mailman/listinfo/scipy-user">More information about the SciPy-User
+mailing list</a><br>
+
+</body></html>

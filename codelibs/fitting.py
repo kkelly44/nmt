@@ -118,6 +118,17 @@ def fitFunctionOdr(x, y, x_err, y_err, fitFunction, startingParameters):
 	print myoutput.stopreason
 	return myoutput
 	
+#def calculateOdrChiSquared(fitOutput):
+#	 eps and delta would be needed if we wanted to calculate chi squared
+#	eps = fitOutput.eps y
+#	delta = fitOutput.delta x
+#	 reduced chi squared is given as residual variance (multiple sources claim this is exactly the same)
+#	 see http://mail.scipy.org/pipermail/scipy-user/2012-May/032207.html <-- this one also tells us how to calculate chi squared (not reduced)
+#	 see for curve_fit http://stackoverflow.com/questions/14854339/in-scipy-how-and-why-does-curve-fit-calculate-the-covariance-of-the-parameter-es
+#	 see also gnuplot: http://gnuplot.sourceforge.net/docs_4.2/node86.html
+#	reduced_chi_square = fitOutput.res_var
+#	return reduced_chi_square
+	
 #############################################################################################
 ### Extract from future version of scipy (0.11):                             ################
 ### https://github.com/scipy/scipy/blob/master/scipy/signal/_peak_finding.py ################

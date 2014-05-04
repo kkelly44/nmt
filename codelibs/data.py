@@ -19,10 +19,14 @@ class FitData:
 	def intervalText(self):
 		return 'Interval: {0} -> {1}'.format(self.interval[0][self.x_field], self.interval[-1][self.x_field])
 	def informationTexts(self):
-		return '''Residual variance: {0}
-			'Inverse condition number: {1}
-			'Relative error in function values: {2}
-			'Reason(s) for Halting: {3}'''.format(self.residualVariance, self.inverseConditionNumber, self.relativeError, self.haltingReasons)
+	# reduced chi squared is given as residual variance (multiple sources claim this is exactly the same)
+	# see http://mail.scipy.org/pipermail/scipy-user/2012-May/032207.html <-- this one also tells us how to calculate chi squared (not reduced)
+	# see for curve_fit http://stackoverflow.com/questions/14854339/in-scipy-how-and-why-does-curve-fit-calculate-the-covariance-of-the-parameter-es
+	# see also gnuplot: http://gnuplot.sourceforge.net/docs_4.2/node86.html
+		return '\n'.join(['Reduced chi squared: {0}',
+			'Inverse condition number: {1}', 
+			'Relative error in function values: {2}',
+			'Reason(s) for Halting: {3}']).format(self.residualVariance, self.inverseConditionNumber, self.relativeError, self.haltingReasons)
 	def paramText(self, tabWidth):
 		return self.params.textTabOutlined(tabWidth)
 	def covarianceText(self):
